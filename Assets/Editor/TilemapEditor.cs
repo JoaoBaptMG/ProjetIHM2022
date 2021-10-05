@@ -96,7 +96,7 @@ public class TilemapEditor : Editor
         for (int i = 0; i < tileItems.Length; i++)
         {
             int val = i + 1;
-            var name = tileItems[i]?.name ?? "<not assigned>";
+            var name = tileItems[i] != null ? tileItems[i].name : "<not assigned>";
             menu.AddItem(new GUIContent(name), false, delegate
             {
                 curTile = val;
