@@ -27,47 +27,77 @@ public class Player : MonoBehaviour
 
     // Private fields
     Vector2 velocity;
-    float horAccel;
     bool grounded;
+
+    Rect boundsRect;
 
     // Start is called before the first frame update
     void Start()
     {
         velocity = Vector2.zero;
-        horAccel = 0;
         grounded = false;
+
+        var bounds = GetComponent<SpriteRenderer>().bounds;
+        boundsRect = new Rect(bounds.min.x, bounds.min.y, bounds.size.x, bounds.size.y);
     }
 
     // Integrate using semi-implicit Euler
     void FixedUpdate()
     {
-        // Build the acceleration vector
-        var acceleration = new Vector2(horAccel, grounded ? 0f : -gravity);
-        velocity += acceleration * Time.fixedDeltaTime;
-        Position += velocity * Time.fixedDeltaTime;
+        RespondToGravityAndCollision();
     }
 
-    // Collision for now
     void Update()
     {
-        ManageTilemapCollision();
+        // Get all the inputs necessary
+        ListenToHorizontalInput();
+        ListenToJumpInput();
     }
 
-    void ManageTilemapCollision()
+    void ListenToHorizontalInput()
     {
-        // Check collision with the ground
-        float x = Position.x, y = Position.y;
-        var tile = tilemap[x, y - 0.5f];
-        var pos = Position;
+        // First, set up the final speed
+        float targetHorSpeed = maxMoveSpeed * Input.GetAxisRaw("Horizontal");
 
-        if (tile != null)
+        if (velocity.x < targetHorSpeed)
+            velocity.x = Mathf.Min(velocity.x + moveAcceleration * Time.deltaTime, targetHorSpeed);
+        else if (velocity.x > targetHorSpeed)
+            velocity.x = Mathf.Max(velocity.x - moveAcceleration * Time.deltaTime, targetHorSpeed);
+    }
+
+    void ListenToJumpInput()
+    {
+        // Get the jump input
+        if (grounded)
+        {
+            if (Input.GetButtonDown("Jump"))
+            {
+                velocity.y = JumpSpeed;
+                grounded = false;
+            }
+        }
+        else if (Input.GetButtonUp("Jump"))
+            velocity.y = Mathf.Min(velocity.y, JumpReleaseSpeed);
+    }
+
+    private void RespondToGravityAndCollision()
+    {
+        // Build the acceleration vector
+        velocity.y -= gravity * Time.fixedDeltaTime;
+
+        // Get movement resolution from the tilemap
+        var curRect = new Rect(boundsRect.position + Position, boundsRect.size);
+        var resolution = tilemap.MovementSimulation(curRect, velocity, true);
+        Position += velocity * Time.fixedDeltaTime + resolution;
+
+        // Check resolution and update velocities accordingly
+        if (resolution.x != 0) velocity.x = 0;
+        if (resolution.y > 0)
         {
             grounded = true;
-            pos.y = tile.transform.position.y + 1f;
-            velocity.y = 0f;
+            velocity.y = 0;
         }
-        else grounded = false;
-
-        Position = pos;
+        else if (resolution.y == 0) grounded = false;
+        if (!grounded && resolution.y < 0) velocity.y = 0;
     }
 }
