@@ -10,7 +10,8 @@ public class TilemapEditor : Editor
 {
     int curTile;
     string curTileName;
-    GameObject[] tileItems;
+    TileAttributes[] tileItems;
+    Dictionary<Vector2Int, TileAttributes> tileGrid;
 
     static readonly Color[] MouseColors = new Color[]
     {
@@ -27,6 +28,7 @@ public class TilemapEditor : Editor
         curTileName = "none";
         prevtx = -1;
         prevty = -1;
+        tileGrid = new Dictionary<Vector2Int, TileAttributes>();
     }
 
     public override void OnInspectorGUI()
@@ -39,15 +41,17 @@ public class TilemapEditor : Editor
         if (GUILayout.Button("Relink all objects"))
             RelinkPrefabObjects();
 
+        if (GUILayout.Button("Remove not on grid and duplicate tiles"))
+            RemoveUngridAndDuplicateTiles();
+
         base.OnInspectorGUI();
     }
 
     private void RelinkPrefabObjects()
     {
-        if (target == null) return;
-
-        MyTilemap myTarget = target as MyTilemap;
-        tileItems = myTarget.TileItems;
+        var myTarget = target as MyTilemap;
+        if (myTarget == null) return;
+        tileItems = myTarget.tileItems;
 
         var gameObjectsToChange = new List<GameObject>(myTarget.transform.childCount);
 
@@ -59,7 +63,7 @@ public class TilemapEditor : Editor
 
         foreach (var obj in gameObjectsToChange)
         {
-            GameObject foundTile = null;
+            TileAttributes foundTile = null;
 
             foreach (var tile in tileItems)
             {
@@ -73,7 +77,7 @@ public class TilemapEditor : Editor
 
             if (foundTile == null) continue;
 
-            var newObj = PrefabUtility.InstantiatePrefab(foundTile, obj.transform.parent) as GameObject;
+            var newObj = PrefabUtility.InstantiatePrefab(foundTile, obj.transform.parent) as TileAttributes;
             Undo.RegisterCreatedObjectUndo(newObj, "Relink tiles");
             newObj.transform.position = obj.transform.position;
 
@@ -81,9 +85,39 @@ public class TilemapEditor : Editor
         }
     }
 
+    void RemoveUngridAndDuplicateTiles()
+    {
+        RelinkPrefabObjects();
+
+        var myTarget = target as MyTilemap;
+        if (myTarget == null) return;
+       
+        tileGrid.Clear();
+
+        foreach (Transform childTransform in myTarget.transform)
+        {
+            var pos = new Vector2Int(Mathf.FloorToInt(childTransform.position.x), Mathf.FloorToInt(childTransform.position.y));
+            if (pos.x + 0.5f != childTransform.position.x || pos.y + 0.5f != childTransform.position.y) continue;
+            if (!tileGrid.ContainsKey(pos))
+            {
+                var tile = childTransform.GetComponent<TileAttributes>();
+                if (tile != null) tileGrid[pos] = tile;
+            }
+        }
+
+        foreach (Transform childTransform in myTarget.transform)
+        {
+            var pos = new Vector2Int(Mathf.FloorToInt(childTransform.position.x), Mathf.FloorToInt(childTransform.position.y));
+            if (!tileGrid.ContainsKey(pos) || tileGrid[pos] != childTransform.GetComponent<TileAttributes>())
+                Undo.DestroyObjectImmediate(childTransform.gameObject);
+        }
+    }
+
     private void ShowDropdownMenu()
     {
-        tileItems = (target as MyTilemap).TileItems;
+        var myTarget = target as MyTilemap;
+        if (myTarget == null) return;
+        tileItems = myTarget.tileItems;
 
         var menu = new GenericMenu();
         menu.AddItem(new GUIContent("none"), false, delegate
@@ -148,21 +182,26 @@ public class TilemapEditor : Editor
     {
         if (prevtx != tx || prevty != ty)
         {
-            var tilePos = new Vector2(tx + 0.5f, ty + 0.5f);
-
             var transform = (target as MyTilemap).transform;
-            foreach (var collider in Physics2D.OverlapPointAll(tilePos))
-                if (collider != null && collider.transform.parent == transform)
-                    Undo.DestroyObjectImmediate(collider.gameObject);
+            if (transform == null) return;
+
+            var tileId = new Vector2Int(tx, ty);
+
+            if (tileGrid.ContainsKey(tileId))
+            {
+                Undo.DestroyObjectImmediate(tileGrid[tileId].gameObject);
+                if (tileIdx == 0) tileGrid.Remove(tileId);
+            }
 
             if (tileIdx > 0)
             {
-                var obj = tileItems[tileIdx - 1];
-                if (obj != null)
+                var tile = tileItems[tileIdx - 1];
+                if (tile != null && PrefabUtility.IsPartOfAnyPrefab(tile))
                 {
-                    var tile = PrefabUtility.InstantiatePrefab(obj, transform) as GameObject;
-                    Undo.RegisterCreatedObjectUndo(tile, $"Place tile {curTileName}");
-                    tile.transform.position = new Vector3(tx + 0.5f, ty + 0.5f, 0.0f);
+                    var newTile = PrefabUtility.InstantiatePrefab(tile, transform) as TileAttributes;
+                    Undo.RegisterCreatedObjectUndo(newTile, $"Place tile {curTileName}");
+                    newTile.transform.position = new Vector3(tx + 0.5f, ty + 0.5f, 0.0f);
+                    tileGrid[tileId] = newTile;
                 }
             }
 

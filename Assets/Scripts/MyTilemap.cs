@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteInEditMode]
 public class MyTilemap : MonoBehaviour
 {
     // Marker script
-    public GameObject[] TileItems;
+    public TileAttributes[] tileItems;
 
-    GameObject[,] tileGrid;
+    TileAttributes[,] tileGrid;
     int startX, startY;
 
     private void Awake()
@@ -17,27 +16,27 @@ public class MyTilemap : MonoBehaviour
         startX = int.MaxValue; startY = int.MaxValue;
         int endX = int.MinValue, endY = int.MinValue;
 
-        foreach (var tr in GetComponentsInChildren<Transform>())
+        foreach (var tile in GetComponentsInChildren<TileAttributes>())
         {
-            if (tr == transform) continue;
-            int x = Mathf.FloorToInt(tr.position.x), y = Mathf.FloorToInt(tr.position.y);
+            if (tile.transform == transform) continue;
+            int x = Mathf.FloorToInt(tile.transform.position.x), y = Mathf.FloorToInt(tile.transform.position.y);
             startX = Mathf.Min(startX, x);
             startY = Mathf.Min(startY, y);
             endX = Mathf.Max(endX, x + 1);
             endY = Mathf.Max(endY, y + 1);
         }
 
-        tileGrid = new GameObject[endX - startX, endY - startY];
-        foreach (var tr in GetComponentsInChildren<Transform>())
+        tileGrid = new TileAttributes[endX - startX, endY - startY];
+        foreach (var tile in GetComponentsInChildren<TileAttributes>())
         {
-            if (tr == transform) continue;
-            int x = Mathf.FloorToInt(tr.position.x), y = Mathf.FloorToInt(tr.position.y);
-            tileGrid[x - startX, y - startY] = tr.gameObject;
+            if (tile.transform == transform) continue;
+            int x = Mathf.FloorToInt(tile.transform.position.x), y = Mathf.FloorToInt(tile.transform.position.y);
+            tileGrid[x - startX, y - startY] = tile;
         }
     }
 
     // Indexers
-    public GameObject this[int x, int y]
+    public TileAttributes this[int x, int y]
     {
         get
         {
@@ -48,8 +47,8 @@ public class MyTilemap : MonoBehaviour
             return tileGrid[tx, ty];
         }
     }
-    public GameObject this[float x, float y] => this[Mathf.FloorToInt(x), Mathf.FloorToInt(y)];
-    public GameObject this[Vector2 pos] => this[pos.x, pos.y];
+    public TileAttributes this[float x, float y] => this[Mathf.FloorToInt(x), Mathf.FloorToInt(y)];
+    public TileAttributes this[Vector2 pos] => this[pos.x, pos.y];
 
     /// <summary>
     /// Simulates the movement (with collision) of a box within the tilemap
