@@ -29,6 +29,7 @@ public class TilemapEditor : Editor
         prevtx = -1;
         prevty = -1;
         tileGrid = new Dictionary<Vector2Int, TileAttributes>();
+        RemoveUngridAndDuplicateTiles();
     }
 
     public override void OnInspectorGUI()

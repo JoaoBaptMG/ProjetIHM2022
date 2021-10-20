@@ -10,7 +10,7 @@ public class MyTilemap : MonoBehaviour
     TileAttributes[,] tileGrid;
     int startX, startY;
 
-    private void Awake()
+    private void Start()
     {
         // Compute the tile grid
         startX = int.MaxValue; startY = int.MaxValue;
@@ -57,22 +57,19 @@ public class MyTilemap : MonoBehaviour
     /// <param name="velocity">The velocity of the box</param>
     /// <param name="fixedUpdate">Whether the code is being run on FixedUpdate or not</param>
     /// <returns>The velocity response vector</returns>
-    public Vector2 MovementSimulation(Rect rect, Vector2 velocity, bool fixedUpdate = false)
+    public Vector2 MovementSimulation(Rect rect, Vector2 deltaPosition)
     {
-        // Calculate the delta
-        var dpos = velocity * (fixedUpdate ? Time.fixedDeltaTime : Time.deltaTime);
-
         // Simulate movement in Y
-        var nextY = rect.y + dpos.y;
+        var nextY = rect.y + deltaPosition.y;
         var collisionY = nextY;
 
-        if (velocity.y < 0)
+        if (deltaPosition.y < 0)
         {
             // If there is a collision on the bottom side
             if (HorizontalStripeCollision(rect.x, nextY, rect.width))
                 collisionY = Mathf.Ceil(nextY);
         }
-        else if (velocity.y > 0)
+        else if (deltaPosition.y > 0)
         {
             // If there is a collision on the top side
             if (HorizontalStripeCollision(rect.x, nextY + rect.height, rect.width))
@@ -80,16 +77,16 @@ public class MyTilemap : MonoBehaviour
         }
 
         // Simulate movement in X
-        var nextX = rect.x + dpos.x;
+        var nextX = rect.x + deltaPosition.x;
         var collisionX = nextX;
         
-        if (velocity.x < 0)
+        if (deltaPosition.x < 0)
         {
             // If there's a collision on the left side
             if (VerticalStripeCollision(nextX, collisionY, rect.height))
                 collisionX = Mathf.Ceil(nextX);
         }
-        else if (velocity.x > 0)
+        else if (deltaPosition.x > 0)
         {
             // If there's a collision on the right side
             if (VerticalStripeCollision(nextX + rect.width, collisionY, rect.height))
