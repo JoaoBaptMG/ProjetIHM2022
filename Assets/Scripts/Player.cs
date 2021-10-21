@@ -33,25 +33,28 @@ public class Player : MonoBehaviour
     public float dashDistance = 25f;
     public float dashDuration = 0.5f;
 
+    [Header("Wall Jump")]
+    public float wallBounceSpeed = 4f;
+    public float wallJumpHeight = 4f;
+    public bool enableWallSlide = true;
+    public float wallSlideSpeed = 1f;
+
     [Header("Collision")]
     public MyTilemap tilemap;
 
     // Physical properties
     float JumpSpeed => Mathf.Sqrt(2f * gravity * jumpHeight);
     float JumpReleaseSpeed => Mathf.Sqrt(2f * gravity * jumpReleaseHeight);
+    float WallJumpSpeed => Mathf.Sqrt(2f * gravity * wallJumpHeight);
 
     float DashSpeed => dashDistance / dashDuration;
 
     // Private fields
     Vector2 velocity;
-    bool grounded;
-    float lastTimeLeftGround;
-    float lastTimeJumpPress;
+    bool grounded, dashed, onWall;
+    float lastTimeLeftGround, lastTimeJumpPress, lastTimeWallJumpPress;
+    float sprintStartTime, sprintEndTime, dashStartTime;
     int numJumps;
-    float sprintStartTime;
-    float sprintEndTime;
-    bool dashed;
-    float dashStartTime;
 
     Rect boundsRect;
 
@@ -73,6 +76,7 @@ public class Player : MonoBehaviour
         velocity = Vector2.zero;
         grounded = false;
         dashed = false;
+        onWall = false;
 
         var bounds = GetComponent<SpriteRenderer>().bounds;
         boundsRect = new Rect(bounds.min.x, bounds.min.y, bounds.size.x, bounds.size.y);
@@ -88,7 +92,6 @@ public class Player : MonoBehaviour
         numJumps = 0;
     }
 
-    // Integrate using semi-implicit Euler
     void FixedUpdate()
     {
         RespondToGravityAndCollision();
@@ -196,8 +199,10 @@ public class Player : MonoBehaviour
         var now = Time.time;
 
         // Check if the player is airborne and the dash jump is pressed
-        if (!grounded && !dashed && Input.GetButtonDown("SprintDash"))
+        bool willDash = Input.GetButtonDown("SprintDash") && DiscreteHorizontalMovement != 0;
+        if (!grounded && !dashed && willDash)
         {
+            velocity = new Vector2(DiscreteHorizontalMovement * DashSpeed, 0f);
             BeginDash();
             dashed = true;
             dashStartTime = now;
@@ -221,13 +226,11 @@ public class Player : MonoBehaviour
     void BeginDash()
     {
         // TODO: Modify here for possible particles or changes
-        Debug.Log(nameof(BeginDash));
     }
 
     void EndDash()
     {
         // TODO: Modify here for possible particles or changes
-        Debug.Log(nameof(EndDash));
     }
 
     void HandleJump()
@@ -237,22 +240,34 @@ public class Player : MonoBehaviour
 
         // Listen to the jump button
         if (Input.GetButtonDown("Jump"))
+        {
             lastTimeJumpPress = now;
+            lastTimeWallJumpPress = now;
+        }
+
+        // Two different checks so the double jump doesn't precede the wall jump
         bool jumpPress = now - lastTimeJumpPress <= jumpBounceDelay;
+        bool wallJumpPress = now - lastTimeWallJumpPress <= jumpBounceDelay;
 
         // Check if the user just left ground
         bool shortAfterFall = now - lastTimeLeftGround <= postLedgeJumpDelay;
+        bool canJump = grounded || shortAfterFall || numJumps < maxNumJumps;
 
-        if (grounded || shortAfterFall || numJumps < maxNumJumps)
+        // This specific arrangement is to allow wall jumps to be done even in present of double jumps
+        if (jumpPress && canJump)
         {
-            if (jumpPress)
-            {
-                // Reset the jump press variable
-                lastTimeJumpPress = float.NegativeInfinity;
-                JumpAction();
-            }
+            lastTimeJumpPress = float.NegativeInfinity;
+            if (grounded) lastTimeWallJumpPress = float.NegativeInfinity;
+            JumpAction();
         }
-        else if (Input.GetButtonUp("Jump"))
+        else if (wallJumpPress && onWall)
+        {
+            lastTimeJumpPress = float.NegativeInfinity;
+            lastTimeWallJumpPress = float.NegativeInfinity;
+            WallJumpAction();
+        }
+
+        if (!grounded && Input.GetButtonUp("Jump"))
             velocity.y = Mathf.Min(velocity.y, JumpReleaseSpeed);
     }
 
@@ -264,10 +279,21 @@ public class Player : MonoBehaviour
         numJumps++;
     }
 
+    private void WallJumpAction()
+    {
+        // Set relevant variables
+        velocity.x = -Mathf.Sign(velocity.x) * wallBounceSpeed;
+        velocity.y = WallJumpSpeed;
+        onWall = false;
+        numJumps = 1;
+    }
+
     private void RespondToGravityAndCollision()
     {
-        // Build the acceleration vector
-        velocity.y -= gravity * Time.fixedDeltaTime;
+        // Integrate using semi-implicit Euler
+        if (enableWallSlide && onWall)
+            velocity = new Vector2(0, -wallSlideSpeed);
+        else velocity.y -= gravity * Time.fixedDeltaTime;
 
         // Get movement resolution from the tilemap
         var deltaPosition = velocity * Time.fixedDeltaTime;
@@ -275,14 +301,22 @@ public class Player : MonoBehaviour
         var resolution = tilemap.MovementSimulation(curRect, deltaPosition);
         Position += deltaPosition + resolution;
 
-        // Check resolution and update velocities accordingly
-        // Check and update grounded state as well
+        // Check wall attachment and do wall jump
         if (resolution.x != 0)
         {
             velocity.x = 0;
             // Stop dashing
             dashStartTime = Time.fixedTime - dashDuration;
+            if (!onWall) AttachToWall();
+            onWall = true;
         }
+        else
+        {
+            if (onWall) DetachFromWall();
+            onWall = false;
+        }
+
+        // Check vertical resolution and update grounded state
         if (resolution.y > 0)
         {
             if (!grounded) Ground();
@@ -300,6 +334,7 @@ public class Player : MonoBehaviour
     private void BeginFall()
     {
         // Set all important variables when losing ground
+        if (numJumps == 0) numJumps = 1;
         lastTimeLeftGround = Time.fixedTime;
     }
 
@@ -308,5 +343,15 @@ public class Player : MonoBehaviour
     {
         numJumps = 0;
         dashed = false;
+    }
+
+    private void AttachToWall()
+    {
+
+    }
+
+    private void DetachFromWall()
+    {
+
     }
 }
