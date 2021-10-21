@@ -29,7 +29,9 @@ public class TilemapEditor : Editor
         prevtx = -1;
         prevty = -1;
         tileGrid = new Dictionary<Vector2Int, TileAttributes>();
-        RemoveUngridAndDuplicateTiles();
+        RemoveUngridAndDuplicateTiles(undo: false);
+
+        Undo.undoRedoPerformed += () => RemoveUngridAndDuplicateTiles(undo: false);
     }
 
     public override void OnInspectorGUI()
@@ -48,7 +50,13 @@ public class TilemapEditor : Editor
         base.OnInspectorGUI();
     }
 
-    private void RelinkPrefabObjects()
+    private void DestroyObjectMaybeUndo(UnityEngine.Object obj, bool undo)
+    {
+        if (undo) Undo.DestroyObjectImmediate(obj);
+        else DestroyImmediate(obj, true);
+    }
+
+    private void RelinkPrefabObjects(bool undo = true, bool fromRemove = false)
     {
         var myTarget = target as MyTilemap;
         if (myTarget == null) return;
@@ -60,6 +68,15 @@ public class TilemapEditor : Editor
         {
             if (!PrefabUtility.IsPartOfAnyPrefab(objTransform.gameObject))
                 gameObjectsToChange.Add(objTransform.gameObject);
+        }
+
+        if (gameObjectsToChange.Count == 0) return;
+
+        int groupIndex = -1;
+        if (undo && !fromRemove)
+        {
+            Undo.SetCurrentGroupName("Relink prefab objects");
+            groupIndex = Undo.GetCurrentGroup();
         }
 
         foreach (var obj in gameObjectsToChange)
@@ -79,16 +96,26 @@ public class TilemapEditor : Editor
             if (foundTile == null) continue;
 
             var newObj = PrefabUtility.InstantiatePrefab(foundTile, obj.transform.parent) as TileAttributes;
-            Undo.RegisterCreatedObjectUndo(newObj, "Relink tiles");
+            if (undo) Undo.RegisterCreatedObjectUndo(newObj, "Relink tiles");
             newObj.transform.position = obj.transform.position;
 
-            Undo.DestroyObjectImmediate(obj.transform.gameObject);
+            DestroyObjectMaybeUndo(obj.transform.gameObject, undo);
         }
+
+        if (undo && !fromRemove) Undo.CollapseUndoOperations(groupIndex);
     }
 
-    void RemoveUngridAndDuplicateTiles()
+    void RemoveUngridAndDuplicateTiles(bool undo = true)
     {
-        RelinkPrefabObjects();
+        int groupIndex = -1;
+
+        if (undo)
+        {
+            Undo.SetCurrentGroupName("Relink prefab objects");
+            groupIndex = Undo.GetCurrentGroup();
+        }
+
+        RelinkPrefabObjects(undo, true);
 
         var myTarget = target as MyTilemap;
         if (myTarget == null) return;
@@ -110,8 +137,10 @@ public class TilemapEditor : Editor
         {
             var pos = new Vector2Int(Mathf.FloorToInt(childTransform.position.x), Mathf.FloorToInt(childTransform.position.y));
             if (!tileGrid.ContainsKey(pos) || tileGrid[pos] != childTransform.GetComponent<TileAttributes>())
-                Undo.DestroyObjectImmediate(childTransform.gameObject);
+                DestroyObjectMaybeUndo(childTransform.gameObject, true);
         }
+
+        if (undo) Undo.CollapseUndoOperations(groupIndex);
     }
 
     private void ShowDropdownMenu()
@@ -183,6 +212,9 @@ public class TilemapEditor : Editor
     {
         if (prevtx != tx || prevty != ty)
         {
+            Undo.SetCurrentGroupName($"Place tile {curTileName}");
+            int groupIndex = Undo.GetCurrentGroup();
+
             var transform = (target as MyTilemap).transform;
             if (transform == null) return;
 
@@ -205,6 +237,8 @@ public class TilemapEditor : Editor
                     tileGrid[tileId] = newTile;
                 }
             }
+
+            Undo.CollapseUndoOperations(groupIndex);
 
             prevtx = tx;
             prevty = ty;
