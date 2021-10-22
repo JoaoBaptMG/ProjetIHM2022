@@ -23,9 +23,10 @@ public class Player : MonoBehaviour
     public float jumpBounceDelay = 0.25f;
     public int maxNumJumps = 2;
 
-    [Header("Wall jump")]
+    [Header("Wall interactions")]
+    public float maxWallSlideSpeed = 6f;
     public float wallJumpHeight = 3f;
-    public float impulsionSpeed = 3f;
+    public float wallJumpVertSpeed = 3f;
 
     [Header("Sprint")]
     public float maxSprintSpeed = 8f;
@@ -278,7 +279,7 @@ public class Player : MonoBehaviour
         if(wallSliding)
         {
             velocity.y = WallJumpHorSpeed;
-            velocity.x = orientation * impulsionSpeed;
+            velocity.x = orientation * wallJumpVertSpeed;
         }
         else velocity.y = JumpSpeed;
     }
@@ -287,6 +288,9 @@ public class Player : MonoBehaviour
     {
         // Build the acceleration vector
         velocity.y -= gravity * Time.fixedDeltaTime;
+
+        // Clamping vertical speed
+        if(wallSliding) velocity.y = Mathf.Max(velocity.y, -maxWallSlideSpeed);
 
         // Get movement resolution from the tilemap
         var deltaPosition = velocity * Time.fixedDeltaTime;
