@@ -13,7 +13,7 @@ public class Player : MonoBehaviour
     [Tooltip("If on, the joystick axis will be treated with only three target values, left, neutral or right.")]
     public bool discreteMovement = false;
 
-    [Header("Jump")]
+    [Header("Regular jump")]
     public float gravity = 2f;
     public float jumpHeight = 4f;
     public float jumpReleaseHeight = 2f;
@@ -22,6 +22,10 @@ public class Player : MonoBehaviour
     [Tooltip("The maximum time in seconds before connecting with ground where a jump will be registered as valid.")]
     public float jumpBounceDelay = 0.25f;
     public int maxNumJumps = 2;
+
+    [Header("Wall jump")]
+    public float wallJumpHeight = 3f;
+    public float impulsionSpeed = 3f;
 
     [Header("Sprint")]
     public float maxSprintSpeed = 8f;
@@ -38,6 +42,7 @@ public class Player : MonoBehaviour
 
     // Physical properties
     float JumpSpeed => Mathf.Sqrt(2f * gravity * jumpHeight);
+    float WallJumpHorSpeed => Mathf.Sqrt(2f * gravity * wallJumpHeight);
     float JumpReleaseSpeed => Mathf.Sqrt(2f * gravity * jumpReleaseHeight);
 
     float DashSpeed => dashDistance / dashDuration;
@@ -52,6 +57,10 @@ public class Player : MonoBehaviour
     float sprintEndTime;
     bool dashed;
     float dashStartTime;
+    bool wallSliding;
+    // The orientation of the player.
+    // Either 1 (when the player is facing right) or -1 (when the player is facing left).
+    int orientation;
 
     Rect boundsRect;
 
@@ -73,6 +82,8 @@ public class Player : MonoBehaviour
         velocity = Vector2.zero;
         grounded = false;
         dashed = false;
+        wallSliding = false;
+        orientation = 1;
 
         var bounds = GetComponent<SpriteRenderer>().bounds;
         boundsRect = new Rect(bounds.min.x, bounds.min.y, bounds.size.x, bounds.size.y);
@@ -124,6 +135,9 @@ public class Player : MonoBehaviour
         float maxStateSpeed = Sprinting ? maxSprintSpeed : maxMoveSpeed;
         float targetHorSpeed = maxStateSpeed * HorizontalMovement;
         bool changingSpeed = targetHorSpeed * velocity.x < 0;
+
+        // Update player's orientation
+        if (HorizontalMovement != 0) orientation = (int)(HorizontalMovement / Mathf.Abs(HorizontalMovement));
 
         // Compute the acceleration
         float acceleration;
@@ -243,7 +257,7 @@ public class Player : MonoBehaviour
         // Check if the user just left ground
         bool shortAfterFall = now - lastTimeLeftGround <= postLedgeJumpDelay;
 
-        if (grounded || shortAfterFall || numJumps < maxNumJumps)
+        if (grounded || shortAfterFall || numJumps < maxNumJumps || wallSliding)
         {
             if (jumpPress)
             {
@@ -259,9 +273,14 @@ public class Player : MonoBehaviour
     private void JumpAction()
     {
         // Set relevant variables
-        velocity.y = JumpSpeed;
         grounded = false;
         numJumps++;
+        if(wallSliding)
+        {
+            velocity.y = WallJumpHorSpeed;
+            velocity.x = orientation * impulsionSpeed;
+        }
+        else velocity.y = JumpSpeed;
     }
 
     private void RespondToGravityAndCollision()
@@ -282,12 +301,15 @@ public class Player : MonoBehaviour
             velocity.x = 0;
             // Stop dashing
             dashStartTime = Time.fixedTime - dashDuration;
+            if(!grounded) wallSliding = true;
         }
+        else { wallSliding = false; }
         if (resolution.y > 0)
         {
             if (!grounded) Ground();
             velocity.y = 0;
             grounded = true;
+            wallSliding = false;
         }
         else if (resolution.y == 0)
         {
