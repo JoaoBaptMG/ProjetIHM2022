@@ -58,10 +58,8 @@ public class Player : MonoBehaviour
     float sprintEndTime;
     bool dashed;
     float dashStartTime;
-    bool wallSliding;
-    // The orientation of the player.
-    // Either 1 (when the player is facing right) or -1 (when the player is facing left).
-    int orientation;
+    bool wallSlidingRight;
+    bool wallSlidingLeft;
 
     Rect boundsRect;
 
@@ -83,8 +81,8 @@ public class Player : MonoBehaviour
         velocity = Vector2.zero;
         grounded = false;
         dashed = false;
-        wallSliding = false;
-        orientation = 1;
+        wallSlidingRight = false;
+        wallSlidingLeft = false;
 
         var bounds = GetComponent<SpriteRenderer>().bounds;
         boundsRect = new Rect(bounds.min.x, bounds.min.y, bounds.size.x, bounds.size.y);
@@ -136,9 +134,6 @@ public class Player : MonoBehaviour
         float maxStateSpeed = Sprinting ? maxSprintSpeed : maxMoveSpeed;
         float targetHorSpeed = maxStateSpeed * HorizontalMovement;
         bool changingSpeed = targetHorSpeed * velocity.x < 0;
-
-        // Update player's orientation
-        if (HorizontalMovement != 0) orientation = (int)(HorizontalMovement / Mathf.Abs(HorizontalMovement));
 
         // Compute the acceleration
         float acceleration;
@@ -258,7 +253,7 @@ public class Player : MonoBehaviour
         // Check if the user just left ground
         bool shortAfterFall = now - lastTimeLeftGround <= postLedgeJumpDelay;
 
-        if (grounded || shortAfterFall || numJumps < maxNumJumps || wallSliding)
+        if (grounded || shortAfterFall || numJumps < maxNumJumps || wallSlidingRight || wallSlidingLeft)
         {
             if (jumpPress)
             {
@@ -276,10 +271,15 @@ public class Player : MonoBehaviour
         // Set relevant variables
         grounded = false;
         numJumps++;
-        if(wallSliding)
+        if(wallSlidingRight)
         {
             velocity.y = WallJumpHorSpeed;
-            velocity.x = -orientation * wallJumpVertSpeed;
+            velocity.x = -wallJumpVertSpeed;
+        }
+        else if(wallSlidingLeft)
+        {
+            velocity.y = WallJumpHorSpeed;
+            velocity.x = wallJumpVertSpeed;
         }
         else velocity.y = JumpSpeed;
     }
@@ -290,7 +290,7 @@ public class Player : MonoBehaviour
         velocity.y -= gravity * Time.fixedDeltaTime;
 
         // Clamping vertical speed
-        if(wallSliding) velocity.y = Mathf.Max(velocity.y, -maxWallSlideSpeed);
+        if(wallSlidingRight || wallSlidingLeft) velocity.y = Mathf.Max(velocity.y, -maxWallSlideSpeed);
 
         // Get movement resolution from the tilemap
         var deltaPosition = velocity * Time.fixedDeltaTime;
@@ -305,15 +305,20 @@ public class Player : MonoBehaviour
             velocity.x = 0;
             // Stop dashing
             dashStartTime = Time.fixedTime - dashDuration;
-            if(!grounded) wallSliding = true;
+            if(!grounded)
+            {
+                if (resolution.x < 0) wallSlidingRight = true;
+                else wallSlidingLeft = true;
+            }
         }
-        else { wallSliding = false; }
+        else { wallSlidingRight = false; wallSlidingLeft = false; }
         if (resolution.y > 0)
         {
             if (!grounded) Ground();
             velocity.y = 0;
             grounded = true;
-            wallSliding = false;
+            wallSlidingRight = false;
+            wallSlidingLeft = false;
         }
         else if (resolution.y == 0)
         {
