@@ -279,7 +279,7 @@ public class Player : MonoBehaviour
         if(wallSliding)
         {
             velocity.y = WallJumpHorSpeed;
-            velocity.x = orientation * wallJumpVertSpeed;
+            velocity.x = -orientation * wallJumpVertSpeed;
         }
         else velocity.y = JumpSpeed;
     }

@@ -8624,13 +8624,14 @@ MonoBehaviour:
   stoppingDeceleration: 22
   discreteMovement: 0
   gravity: 60
-  jumpHeight: 4
+  jumpHeight: 5
   jumpReleaseHeight: 1
   postLedgeJumpDelay: 0.01
   jumpBounceDelay: 0.1
   maxNumJumps: 2
-  wallJumpHeight: 3
-  impulsionSpeed: 3
+  maxWallSlideSpeed: 6
+  wallJumpHeight: 4
+  wallJumpVertSpeed: 15
   maxSprintSpeed: 15
   sprintAcceleration: 40
   maxSprintTime: 5
