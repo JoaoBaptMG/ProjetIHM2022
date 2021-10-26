@@ -66,6 +66,9 @@ public class Player : MonoBehaviour
     // The particle system bound to the palyer
     private ParticleSystem particleSystem;
 
+    // The camera (used for screen shake)
+    private Camera camera;
+
     // Transform property
     Vector2 Position
     {
@@ -93,6 +96,9 @@ public class Player : MonoBehaviour
         // Get the particle system component and disable it
         particleSystem = GetComponent<ParticleSystem>();
         particleSystem.Stop();
+
+        // Get the camera
+        camera = FindObjectOfType<Camera>();
 
         // Set timer variables
         lastTimeLeftGround = float.NegativeInfinity;
