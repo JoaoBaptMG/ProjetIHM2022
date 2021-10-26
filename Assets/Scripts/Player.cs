@@ -98,7 +98,7 @@ public class Player : MonoBehaviour
         particleSystem.Stop();
 
         // Get the camera
-        camera = FindObjectOfType<Camera>();
+        camera = GameObject.FindObjectOfType<Camera>();
 
         // Set timer variables
         lastTimeLeftGround = float.NegativeInfinity;
@@ -378,41 +378,56 @@ public class Player : MonoBehaviour
     // Animation coroutines
     private IEnumerator LandingAnimation()
     {
-        DampedWaveTransition transitionX = new DampedWaveTransition();
-        transitionX.From = 1.7f;
-        transitionX.To = 1f;
-        transitionX.Frequency = 15f;
-        transitionX.DampingFactor = 3f;
-        transitionX.Duration = 0.8f;
+        DampedWaveTransition xScaleTransition = new DampedWaveTransition();
+        xScaleTransition.From = 1.7f;
+        xScaleTransition.To = 1f;
+        xScaleTransition.Frequency = 15f;
+        xScaleTransition.DampingFactor = 3f;
+        xScaleTransition.Duration = 0.8f;
 
-        DampedWaveTransition transitionY = new DampedWaveTransition();
-        transitionY.From = 0.33f;
-        transitionY.To = 1f;
-        transitionY.Frequency = 15f;
-        transitionY.DampingFactor = 3f;
-        transitionY.Duration = 0.8f;
+        DampedWaveTransition yScaleTransition = new DampedWaveTransition();
+        yScaleTransition.From = 0.33f;
+        yScaleTransition.To = 1f;
+        yScaleTransition.Frequency = 15f;
+        yScaleTransition.DampingFactor = 3f;
+        yScaleTransition.Duration = 0.8f;
 
         // Execute transitions here
-        while (!(transitionY.isFinished() && transitionX.isFinished()))
+        while (!(yScaleTransition.isFinished() && xScaleTransition.isFinished()))
         {
-            transform.localScale = new Vector3(transitionX.getValue(), transitionY.getValue(), 1);
+            transform.localScale = new Vector3(xScaleTransition.getValue(), yScaleTransition.getValue(), 1);
             yield return null;
         }
     }
 
     private IEnumerator DashAnimation()
     {
-        DampedWaveTransition transitionX = new DampedWaveTransition();
-        transitionX.From = 6f;
-        transitionX.To = 1f;
-        transitionX.Frequency = 1f;
-        transitionX.DampingFactor = 6f;
-        transitionX.Duration = 0.6f;
+        DampedWaveTransition xScaleTransition = new DampedWaveTransition();
+        xScaleTransition.From = 6f;
+        xScaleTransition.To = 1f;
+        xScaleTransition.Frequency = 1f;
+        xScaleTransition.DampingFactor = 6f;
+        xScaleTransition.Duration = 0.6f;
+
+        NoisyLinearTransition xScreenShakeTransition = new NoisyLinearTransition();
+        xScreenShakeTransition.From = 0;
+        xScreenShakeTransition.To = 0;
+        xScreenShakeTransition.NoiseMax = 0.5f;
+        xScreenShakeTransition.NoiseMin = -0.5f;
+        xScreenShakeTransition.Duration = 0.2f;
+
+        NoisyLinearTransition yScreenShakeTransition = new NoisyLinearTransition();
+        yScreenShakeTransition.From = 0;
+        yScreenShakeTransition.To = 0;
+        yScreenShakeTransition.NoiseMax = 0.5f;
+        yScreenShakeTransition.NoiseMin = -0.5f;
+        yScreenShakeTransition.Duration = 0.2f;
 
         // Execute transitions here
-        while (!transitionX.isFinished())
+        while (!(xScaleTransition.isFinished() && yScreenShakeTransition.isFinished() && yScreenShakeTransition.isFinished()))
         {
-            transform.localScale = new Vector3(transitionX.getValue(), 1, 1);
+            transform.localScale = new Vector3(xScaleTransition.getValue(), 1, 1);
+            camera.transform.position = new Vector3(xScreenShakeTransition.getValue(), yScreenShakeTransition.getValue(), -10);
             yield return null;
         }
     }
