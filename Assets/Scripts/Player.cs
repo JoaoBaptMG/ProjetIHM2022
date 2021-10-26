@@ -339,5 +339,31 @@ public class Player : MonoBehaviour
     {
         numJumps = 0;
         dashed = false;
+        StartCoroutine(LandingAnimation());
+    }
+
+    // Animation coroutines
+    private IEnumerator LandingAnimation()
+    {
+        DampedWaveTransition transitionX = new DampedWaveTransition();
+        transitionX.From = 1.7f;
+        transitionX.To = 1f;
+        transitionX.Frequency = 15f;
+        transitionX.DampingFactor = 3f;
+        transitionX.Duration = 0.8f;
+
+        DampedWaveTransition transitionY = new DampedWaveTransition();
+        transitionY.From = 0.33f;
+        transitionY.To = 1f;
+        transitionY.Frequency = 15f;
+        transitionY.DampingFactor = 3f;
+        transitionY.Duration = 0.8f;
+
+        // Execute transitions here
+        while (!(transitionY.isFinished() && transitionX.isFinished()))
+        {
+            transform.localScale = new Vector3(transitionX.getValue(), transitionY.getValue(), 1);
+            yield return null;
+        }
     }
 }
