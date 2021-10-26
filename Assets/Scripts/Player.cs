@@ -13,7 +13,7 @@ public class Player : MonoBehaviour
     [Tooltip("If on, the joystick axis will be treated with only three target values, left, neutral or right.")]
     public bool discreteMovement = false;
 
-    [Header("Jump")]
+    [Header("Regular jump")]
     public float gravity = 2f;
     public float jumpHeight = 4f;
     public float jumpReleaseHeight = 2f;
@@ -22,6 +22,11 @@ public class Player : MonoBehaviour
     [Tooltip("The maximum time in seconds before connecting with ground where a jump will be registered as valid.")]
     public float jumpBounceDelay = 0.25f;
     public int maxNumJumps = 2;
+
+    [Header("Wall interactions")]
+    public float maxWallSlideSpeed = 6f;
+    public float wallJumpHeight = 3f;
+    public float wallJumpVertSpeed = 3f;
 
     [Header("Sprint")]
     public float maxSprintSpeed = 8f;
@@ -38,6 +43,7 @@ public class Player : MonoBehaviour
 
     // Physical properties
     float JumpSpeed => Mathf.Sqrt(2f * gravity * jumpHeight);
+    float WallJumpHorSpeed => Mathf.Sqrt(2f * gravity * wallJumpHeight);
     float JumpReleaseSpeed => Mathf.Sqrt(2f * gravity * jumpReleaseHeight);
 
     float DashSpeed => dashDistance / dashDuration;
@@ -52,6 +58,8 @@ public class Player : MonoBehaviour
     float sprintEndTime;
     bool dashed;
     float dashStartTime;
+    bool wallSlidingRight;
+    bool wallSlidingLeft;
 
     Rect boundsRect;
 
@@ -73,6 +81,8 @@ public class Player : MonoBehaviour
         velocity = Vector2.zero;
         grounded = false;
         dashed = false;
+        wallSlidingRight = false;
+        wallSlidingLeft = false;
 
         var bounds = GetComponent<SpriteRenderer>().bounds;
         boundsRect = new Rect(bounds.min.x, bounds.min.y, bounds.size.x, bounds.size.y);
@@ -243,7 +253,7 @@ public class Player : MonoBehaviour
         // Check if the user just left ground
         bool shortAfterFall = now - lastTimeLeftGround <= postLedgeJumpDelay;
 
-        if (grounded || shortAfterFall || numJumps < maxNumJumps)
+        if (grounded || shortAfterFall || numJumps < maxNumJumps || wallSlidingRight || wallSlidingLeft)
         {
             if (jumpPress)
             {
@@ -259,15 +269,28 @@ public class Player : MonoBehaviour
     private void JumpAction()
     {
         // Set relevant variables
-        velocity.y = JumpSpeed;
         grounded = false;
         numJumps++;
+        if(wallSlidingRight)
+        {
+            velocity.y = WallJumpHorSpeed;
+            velocity.x = -wallJumpVertSpeed;
+        }
+        else if(wallSlidingLeft)
+        {
+            velocity.y = WallJumpHorSpeed;
+            velocity.x = wallJumpVertSpeed;
+        }
+        else velocity.y = JumpSpeed;
     }
 
     private void RespondToGravityAndCollision()
     {
         // Build the acceleration vector
         velocity.y -= gravity * Time.fixedDeltaTime;
+
+        // Clamping vertical speed
+        if(wallSlidingRight || wallSlidingLeft) velocity.y = Mathf.Max(velocity.y, -maxWallSlideSpeed);
 
         // Get movement resolution from the tilemap
         var deltaPosition = velocity * Time.fixedDeltaTime;
@@ -282,12 +305,20 @@ public class Player : MonoBehaviour
             velocity.x = 0;
             // Stop dashing
             dashStartTime = Time.fixedTime - dashDuration;
+            if(!grounded)
+            {
+                if (resolution.x < 0) wallSlidingRight = true;
+                else wallSlidingLeft = true;
+            }
         }
+        else { wallSlidingRight = false; wallSlidingLeft = false; }
         if (resolution.y > 0)
         {
             if (!grounded) Ground();
             velocity.y = 0;
             grounded = true;
+            wallSlidingRight = false;
+            wallSlidingLeft = false;
         }
         else if (resolution.y == 0)
         {
