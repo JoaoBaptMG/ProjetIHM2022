@@ -63,6 +63,9 @@ public class Player : MonoBehaviour
 
     Rect boundsRect;
 
+    // The particle system bound to the palyer
+    private ParticleSystem particleSystem;
+
     // Transform property
     Vector2 Position
     {
@@ -86,6 +89,10 @@ public class Player : MonoBehaviour
 
         var bounds = GetComponent<SpriteRenderer>().bounds;
         boundsRect = new Rect(bounds.min.x, bounds.min.y, bounds.size.x, bounds.size.y);
+
+        // Get the particle system component and disable it
+        particleSystem = GetComponent<ParticleSystem>();
+        particleSystem.Stop();
 
         // Set timer variables
         lastTimeLeftGround = float.NegativeInfinity;
@@ -330,6 +337,9 @@ public class Player : MonoBehaviour
             grounded = false;
         }
         if (!grounded && resolution.y < 0) velocity.y = 0;
+
+        if (wallSlidingLeft || wallSlidingRight) BeginWallSlide();
+        else EndWallSlide();
     }
 
     private void BeginFall()
@@ -347,6 +357,16 @@ public class Player : MonoBehaviour
         // Launching the landing animation
         StopAllCoroutines();
         StartCoroutine(LandingAnimation());
+    }
+
+    private void BeginWallSlide()
+    {
+        if(!particleSystem.isEmitting) particleSystem.Play();
+    }
+
+    private void EndWallSlide()
+    {
+        particleSystem.Stop();
     }
 
     // Animation coroutines
