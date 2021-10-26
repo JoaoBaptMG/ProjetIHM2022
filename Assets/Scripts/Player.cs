@@ -232,6 +232,10 @@ public class Player : MonoBehaviour
     {
         // TODO: Modify here for possible particles or changes
         Debug.Log(nameof(BeginDash));
+
+        // Launching the dash animation
+        StopAllCoroutines();
+        StartCoroutine(DashAnimation());
     }
 
     void EndDash()
@@ -339,6 +343,9 @@ public class Player : MonoBehaviour
     {
         numJumps = 0;
         dashed = false;
+
+        // Launching the landing animation
+        StopAllCoroutines();
         StartCoroutine(LandingAnimation());
     }
 
@@ -363,6 +370,23 @@ public class Player : MonoBehaviour
         while (!(transitionY.isFinished() && transitionX.isFinished()))
         {
             transform.localScale = new Vector3(transitionX.getValue(), transitionY.getValue(), 1);
+            yield return null;
+        }
+    }
+
+    private IEnumerator DashAnimation()
+    {
+        DampedWaveTransition transitionX = new DampedWaveTransition();
+        transitionX.From = 6f;
+        transitionX.To = 1f;
+        transitionX.Frequency = 1f;
+        transitionX.DampingFactor = 6f;
+        transitionX.Duration = 0.6f;
+
+        // Execute transitions here
+        while (!transitionX.isFinished())
+        {
+            transform.localScale = new Vector3(transitionX.getValue(), 1, 1);
             yield return null;
         }
     }
