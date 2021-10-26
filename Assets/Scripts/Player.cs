@@ -63,6 +63,9 @@ public class Player : MonoBehaviour
 
     Rect boundsRect;
 
+    // The particle system bound to the palyer
+    private ParticleSystem particleSystem;
+
     // Transform property
     Vector2 Position
     {
@@ -86,6 +89,10 @@ public class Player : MonoBehaviour
 
         var bounds = GetComponent<SpriteRenderer>().bounds;
         boundsRect = new Rect(bounds.min.x, bounds.min.y, bounds.size.x, bounds.size.y);
+
+        // Get the particle system component and disable it
+        particleSystem = GetComponent<ParticleSystem>();
+        particleSystem.Stop();
 
         // Set timer variables
         lastTimeLeftGround = float.NegativeInfinity;
@@ -232,6 +239,10 @@ public class Player : MonoBehaviour
     {
         // TODO: Modify here for possible particles or changes
         Debug.Log(nameof(BeginDash));
+
+        // Launching the dash animation
+        StopAllCoroutines();
+        StartCoroutine(DashAnimation());
     }
 
     void EndDash()
@@ -326,6 +337,9 @@ public class Player : MonoBehaviour
             grounded = false;
         }
         if (!grounded && resolution.y < 0) velocity.y = 0;
+
+        if (wallSlidingLeft || wallSlidingRight) BeginWallSlide();
+        else EndWallSlide();
     }
 
     private void BeginFall()
@@ -339,5 +353,61 @@ public class Player : MonoBehaviour
     {
         numJumps = 0;
         dashed = false;
+
+        // Launching the landing animation
+        StopAllCoroutines();
+        StartCoroutine(LandingAnimation());
+    }
+
+    private void BeginWallSlide()
+    {
+        if(!particleSystem.isEmitting) particleSystem.Play();
+    }
+
+    private void EndWallSlide()
+    {
+        particleSystem.Stop();
+    }
+
+    // Animation coroutines
+    private IEnumerator LandingAnimation()
+    {
+        DampedWaveTransition transitionX = new DampedWaveTransition();
+        transitionX.From = 1.7f;
+        transitionX.To = 1f;
+        transitionX.Frequency = 15f;
+        transitionX.DampingFactor = 3f;
+        transitionX.Duration = 0.8f;
+
+        DampedWaveTransition transitionY = new DampedWaveTransition();
+        transitionY.From = 0.33f;
+        transitionY.To = 1f;
+        transitionY.Frequency = 15f;
+        transitionY.DampingFactor = 3f;
+        transitionY.Duration = 0.8f;
+
+        // Execute transitions here
+        while (!(transitionY.isFinished() && transitionX.isFinished()))
+        {
+            transform.localScale = new Vector3(transitionX.getValue(), transitionY.getValue(), 1);
+            yield return null;
+        }
+    }
+
+    private IEnumerator DashAnimation()
+    {
+        DampedWaveTransition transitionX = new DampedWaveTransition();
+        transitionX.From = 6f;
+        transitionX.To = 1f;
+        transitionX.Frequency = 1f;
+        transitionX.DampingFactor = 6f;
+        transitionX.Duration = 0.6f;
+
+        // Execute transitions here
+        while (!transitionX.isFinished())
+        {
+            transform.localScale = new Vector3(transitionX.getValue(), 1, 1);
+            yield return null;
+        }
     }
 }
