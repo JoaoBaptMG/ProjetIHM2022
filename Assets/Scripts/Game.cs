@@ -12,7 +12,7 @@
     }
 
     // Stores the names of the level scenes in order
-    private string[] levelScenesNames = { "Level1" };
+    private static string[] levelScenesNames = { "Level1" };
 
     // The name of the scene holding the start menu
     public static string StartMenuSceneName { get; } = "StartMenu";
@@ -24,9 +24,9 @@
     public static string gameCompleteMenuSceneName { get; } = "LevelCompleteMenu";
 
     // The index of the current level's scene name in levelScenesNames
-    public int currentLevelIndex = 0;
+    public static int currentLevelIndex = 0;
 
-    public string GetCurrentLevelSceneName()
+    public static string GetCurrentLevelSceneName()
     {
         if(currentLevelIndex >= levelScenesNames.Length) { return gameCompleteMenuSceneName; }
         if(currentLevelIndex < 0) { currentLevelIndex = 0; return StartMenuSceneName; }
