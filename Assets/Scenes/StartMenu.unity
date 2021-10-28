@@ -1986,7 +1986,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: ' Jumping:        or'
+  m_Text: ' Jumping:         or'
 --- !u!222 &611085022
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2332,7 +2332,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: ' Running: Moving +        or'
+  m_Text: ' Running: Moving +          or'
 --- !u!222 &816655175
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3526,7 +3526,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: ' Moving:         or        or'
+  m_Text: ' Moving:          or         or'
 --- !u!222 &1291927423
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3832,7 +3832,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: ' Air dash: airborne +         or'
+  m_Text: ' Air dash: airborne +          or'
 --- !u!222 &1525253691
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4010,7 +4010,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1591343383
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4102,7 +4102,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: '                           or'
+  m_Text: '                             or'
 --- !u!222 &1599079267
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4473,7 +4473,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: ' Pausing the game:         or'
+  m_Text: ' Pausing the game:          or'
 --- !u!222 &1796171527
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4576,7 +4576,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1954048558
 RectTransform:
   m_ObjectHideFlags: 0
