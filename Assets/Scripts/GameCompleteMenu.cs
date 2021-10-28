@@ -11,14 +11,12 @@ public class GameCompleteMenu : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Game.currentLevelIndex = 0;
-
         EventSystem.current.SetSelectedGameObject(null);
         EventSystem.current.SetSelectedGameObject(preselectedButton);
     }
 
     public void DisplayStartMenu()
     {
-        SceneManager.LoadScene(Game.StartMenuSceneName);
+        Game.Reset();
     }
 }
