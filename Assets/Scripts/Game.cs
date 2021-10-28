@@ -21,7 +21,7 @@
     public static string LevelCompleteMenuSceneName { get; } = "LevelCompleteMenu";
 
     // The name of the scene holding the menu displayed upon game completion
-    public static string gameCompleteMenuSceneName { get; } = "LevelCompleteMenu";
+    public static string gameCompleteMenuSceneName { get; } = "GameCompleteMenu";
 
     // The index of the current level's scene name in levelScenesNames
     public static int currentLevelIndex = 0;
