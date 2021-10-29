@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
@@ -124,6 +125,7 @@ public class Player : MonoBehaviour
         HandleHorizontalMovement();
         HandleDash();
         HandleJump();
+        HandleLevelGoal();
     }
 
     // Compute the discrete movement
@@ -373,6 +375,12 @@ public class Player : MonoBehaviour
     private void EndWallSlide()
     {
         particleSystem.Stop();
+    }
+
+    void HandleLevelGoal()
+    {
+        var attrs = tilemap[Position];
+        if (attrs.isLevelGoal) Game.CompleteLevel();
     }
 
     // Animation coroutines

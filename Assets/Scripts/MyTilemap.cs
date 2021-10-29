@@ -103,7 +103,7 @@ public class MyTilemap : MonoBehaviour
         int ty = Mathf.FloorToInt(y);
 
         for (int tx = tx1; tx < tx2; tx++)
-            if (this[tx, ty]) return true;
+            if (this[tx, ty] && this[tx, ty].isSolid) return true;
         return false;
     }
 
@@ -114,7 +114,7 @@ public class MyTilemap : MonoBehaviour
         int ty2 = Mathf.CeilToInt(y + height);
 
         for (int ty = ty1; ty < ty2; ty++)
-            if (this[tx, ty]) return true;
+            if (this[tx, ty] && this[tx, ty].isSolid) return true;
         return false;
     }
 }
