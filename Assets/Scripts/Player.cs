@@ -125,7 +125,7 @@ public class Player : MonoBehaviour
         HandleHorizontalMovement();
         HandleDash();
         HandleJump();
-        HandleLevelGoal();
+        RespondToTileType();
     }
 
     // Compute the discrete movement
@@ -377,10 +377,11 @@ public class Player : MonoBehaviour
         particleSystem.Stop();
     }
 
-    void HandleLevelGoal()
+    void RespondToTileType()
     {
         var attrs = tilemap[Position];
         if (attrs.isLevelGoal) Game.CompleteLevel();
+        else if (attrs.isDeathBlock) Game.RetryLevel();
     }
 
     // Animation coroutines

@@ -6,4 +6,5 @@ public class TileAttributes : MonoBehaviour
 {
     public bool isSolid = true;
     public bool isLevelGoal = false;
+    public bool isDeathBlock = false;
 }
