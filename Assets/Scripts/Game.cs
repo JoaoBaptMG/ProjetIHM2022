@@ -23,6 +23,9 @@ public class Game
     // The name of the level complete menu scene
     private static string levelCompleteMenuSceneName = "LevelCompleteMenu";
 
+    // The name of the level failed menu scene
+    private static string levelFailedMenuSceneName = "LevelFailedMenu";
+
     // The name of the game complete menu scene
     private static string gameCompleteMenuSceneName = "GameCompleteMenu";
 
@@ -50,7 +53,7 @@ public class Game
 
     public static void RetryLevel()
     {
-
+        SceneManager.LoadScene(levelFailedMenuSceneName);
     }
 
     public static void LoadLevel()
