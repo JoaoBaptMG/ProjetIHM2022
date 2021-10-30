@@ -15,7 +15,7 @@ public class Game
     }
 
     // Stores the names of the level scenes in order
-    private static string[] levelSceneNames = { "Level1" };
+    private static string[] levelSceneNames = { "Level1", "Level2" };
 
     // The name of the start menu scene
     private static string startMenuSceneName = "StartMenu";
