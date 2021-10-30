@@ -14,6 +14,9 @@ public class Game
         return instance;
     }
 
+    // Whether or not the feedbacks are activated
+    public static bool FeedbacksActivated { get; set; } = true;
+
     // Stores the names of the level scenes in order
     private static string[] levelSceneNames = { "Level1", "Level2" };
 
