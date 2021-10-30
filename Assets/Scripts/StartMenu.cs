@@ -27,6 +27,11 @@ public class StartMenu : MonoBehaviour
         Application.Quit();
     }
 
+    public void ToggleFeedbacks(bool deactivated)
+    {
+        Game.FeedbacksActivated = !deactivated;
+    }
+
     public void DisplayMainMenu()
     {
         guideSubmenu.SetActive(false);

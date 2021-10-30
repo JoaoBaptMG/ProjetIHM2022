@@ -248,9 +248,12 @@ public class Player : MonoBehaviour
         // TODO: Modify here for possible particles or changes
         Debug.Log(nameof(BeginDash));
 
-        // Launching the dash animation
-        StopAllCoroutines();
-        StartCoroutine(DashAnimation());
+        // Launching the dash animation if feedbacks are activated
+        if (Game.FeedbacksActivated)
+        {
+            StopAllCoroutines();
+            StartCoroutine(DashAnimation());
+        }
     }
 
     void EndDash()
@@ -362,14 +365,18 @@ public class Player : MonoBehaviour
         numJumps = 0;
         dashed = false;
 
-        // Launching the landing animation
-        StopAllCoroutines();
-        StartCoroutine(LandingAnimation());
+        // Launching the landing animation if the feedbacks are activated
+        if (Game.FeedbacksActivated)
+        {
+            StopAllCoroutines();
+            StartCoroutine(LandingAnimation());
+        }
     }
 
     private void BeginWallSlide()
     {
-        if(!particleSystem.isEmitting) particleSystem.Play();
+        // Resume emitting smoke particles if the feedbacks are activated
+        if(Game.FeedbacksActivated && !particleSystem.isEmitting) particleSystem.Play();
     }
 
     private void EndWallSlide()
