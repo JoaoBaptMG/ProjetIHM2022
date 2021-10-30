@@ -379,9 +379,10 @@ public class Player : MonoBehaviour
 
     void RespondToTileType()
     {
-        var attrs = tilemap[Position];
-        if (attrs.isLevelGoal) Game.CompleteLevel();
-        else if (attrs.isDeathBlock) Game.RetryLevel();
+        var tile = tilemap[Position];
+        if (tile == null) return;
+        if (tile.isLevelGoal) Game.CompleteLevel();
+        else if (tile.isDeathBlock) Game.RetryLevel();
     }
 
     // Animation coroutines

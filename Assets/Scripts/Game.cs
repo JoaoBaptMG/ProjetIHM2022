@@ -15,13 +15,16 @@ public class Game
     }
 
     // Stores the names of the level scenes in order
-    private static string[] levelSceneNames = { "Level1" };
+    private static string[] levelSceneNames = { "Level1", "Level2" };
 
     // The name of the start menu scene
     private static string startMenuSceneName = "StartMenu";
 
     // The name of the level complete menu scene
     private static string levelCompleteMenuSceneName = "LevelCompleteMenu";
+
+    // The name of the level failed menu scene
+    private static string levelFailedMenuSceneName = "LevelFailedMenu";
 
     // The name of the game complete menu scene
     private static string gameCompleteMenuSceneName = "GameCompleteMenu";
@@ -50,7 +53,7 @@ public class Game
 
     public static void RetryLevel()
     {
-
+        SceneManager.LoadScene(levelFailedMenuSceneName);
     }
 
     public static void LoadLevel()
