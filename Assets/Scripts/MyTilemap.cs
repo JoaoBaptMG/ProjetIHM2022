@@ -59,41 +59,56 @@ public class MyTilemap : MonoBehaviour
     /// <returns>The velocity response vector</returns>
     public Vector2 MovementSimulation(Rect rect, Vector2 deltaPosition)
     {
-        // Simulate movement in Y
-        var nextY = rect.y + deltaPosition.y;
-        var collisionY = nextY;
+        // Detect whether we should simulate in X or Y first
+        var distanceTileX = deltaPosition.x > 0 ? Mathf.Floor(rect.x + rect.width) + 1 - (rect.x + rect.width) : rect.x - Mathf.Floor(rect.x);
+        var distanceTileY = deltaPosition.y > 0 ? Mathf.Floor(rect.y + rect.height) + 1 - (rect.y + rect.height) : rect.y - Mathf.Floor(rect.y);
+        bool horizontal = distanceTileX * Mathf.Abs(deltaPosition.y) < distanceTileY * Mathf.Abs(deltaPosition.x);
 
-        if (deltaPosition.y < 0)
+        var collisionPos = rect.position;
+
+        for (int i = 0; i < 2; i++)
         {
-            // If there is a collision on the bottom side
-            if (HorizontalStripeCollision(rect.x, nextY, rect.width))
-                collisionY = Mathf.Ceil(nextY);
-        }
-        else if (deltaPosition.y > 0)
-        {
-            // If there is a collision on the top side
-            if (HorizontalStripeCollision(rect.x, nextY + rect.height, rect.width))
-                collisionY = Mathf.Floor(nextY + rect.height) - rect.height;
+            if (horizontal)
+            {
+                // Simulate movement in X
+                collisionPos.x += deltaPosition.x;
+
+                if (deltaPosition.x < 0)
+                {
+                    // If there's a collision on the left side
+                    if (VerticalStripeCollision(collisionPos.x, collisionPos.y, rect.height))
+                        collisionPos.x = Mathf.Ceil(collisionPos.x);
+                }
+                else if (deltaPosition.x > 0)
+                {
+                    // If there's a collision on the right side
+                    if (VerticalStripeCollision(collisionPos.x + rect.width, collisionPos.y, rect.height))
+                        collisionPos.x = Mathf.Floor(collisionPos.x + rect.width) - rect.width;
+                }
+            }
+            else
+            {
+                // Simulate movement in X
+                collisionPos.y += deltaPosition.y;
+
+                if (deltaPosition.y < 0)
+                {
+                    // If there's a collision on the left side
+                    if (HorizontalStripeCollision(collisionPos.x, collisionPos.y, rect.width))
+                        collisionPos.y = Mathf.Ceil(collisionPos.y);
+                }
+                else if (deltaPosition.y > 0)
+                {
+                    // If there's a collision on the right side
+                    if (HorizontalStripeCollision(collisionPos.x, collisionPos.y + rect.height, rect.width))
+                        collisionPos.y = Mathf.Floor(collisionPos.y + rect.height) - rect.height;
+                }
+            }
+
+            horizontal = !horizontal;
         }
 
-        // Simulate movement in X
-        var nextX = rect.x + deltaPosition.x;
-        var collisionX = nextX;
-        
-        if (deltaPosition.x < 0)
-        {
-            // If there's a collision on the left side
-            if (VerticalStripeCollision(nextX, collisionY, rect.height))
-                collisionX = Mathf.Ceil(nextX);
-        }
-        else if (deltaPosition.x > 0)
-        {
-            // If there's a collision on the right side
-            if (VerticalStripeCollision(nextX + rect.width, collisionY, rect.height))
-                collisionX = Mathf.Floor(nextX + rect.width) - rect.width;
-        }
-
-        return new Vector2(collisionX - nextX, collisionY - nextY);
+        return collisionPos - (rect.position + deltaPosition);
     }
 
     bool HorizontalStripeCollision(float x, float y, float width)
