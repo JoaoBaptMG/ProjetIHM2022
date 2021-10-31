@@ -51,6 +51,7 @@ public class Player : MonoBehaviour
 
     // Private fields
     Vector2 velocity;
+    float targetHorSpeed;
     bool grounded;
     float lastTimeLeftGround;
     float lastTimeJumpPress;
@@ -86,6 +87,7 @@ public class Player : MonoBehaviour
     void Start()
     {
         velocity = Vector2.zero;
+        targetHorSpeed = 0;
         grounded = false;
         dashed = false;
         wallSlidingRight = false;
@@ -115,6 +117,7 @@ public class Player : MonoBehaviour
     // Integrate using semi-implicit Euler
     void FixedUpdate()
     {
+        ComputeFixedHorizontalMovement();
         RespondToGravityAndCollision();
     }
 
@@ -122,7 +125,7 @@ public class Player : MonoBehaviour
     {
         // Get all the inputs necessary
         HandleSprinting();
-        HandleHorizontalMovement();
+        HandleHorizontalInput();
         HandleDash();
         HandleJump();
         RespondToTileType();
@@ -143,29 +146,11 @@ public class Player : MonoBehaviour
     // Get the actual horizontal movement, depending on the discrete movement
     private float HorizontalMovement => discreteMovement ? DiscreteHorizontalMovement : Input.GetAxisRaw("Horizontal");
 
-    void HandleHorizontalMovement()
+    void HandleHorizontalInput()
     {
         // First, set up the final speed
         float maxStateSpeed = Sprinting ? maxSprintSpeed : maxMoveSpeed;
-        float targetHorSpeed = maxStateSpeed * HorizontalMovement;
-        bool changingSpeed = targetHorSpeed * velocity.x < 0;
-
-        // Compute the acceleration
-        float acceleration;
-        // Consider the stopping and turning cases
-        if (Sprinting) acceleration = sprintAcceleration;
-        else if (Mathf.Abs(targetHorSpeed) < 0.0625f)
-            acceleration = stoppingDeceleration;
-        else if (changingSpeed) // Which means they have opposite signs
-            acceleration = turningDeceleration;
-        else acceleration = moveAcceleration;
-
-        // And get the delta velocity from it
-        float deltaVelocity = acceleration * Time.deltaTime;
-        if (velocity.x < targetHorSpeed)
-            velocity.x = Mathf.Min(velocity.x + deltaVelocity, targetHorSpeed);
-        else if (velocity.x > targetHorSpeed)
-            velocity.x = Mathf.Max(velocity.x - deltaVelocity, targetHorSpeed);
+        targetHorSpeed = maxStateSpeed * HorizontalMovement;
     }
 
     void HandleSprinting()
@@ -239,6 +224,7 @@ public class Player : MonoBehaviour
                 velocity.x = Mathf.Sign(velocity.x) * maxMoveSpeed;
                 EndDash();
             }
+
             dashStartTime = float.NegativeInfinity;
         }
     }
@@ -293,17 +279,42 @@ public class Player : MonoBehaviour
         // Set relevant variables
         grounded = false;
         numJumps++;
+
         if (wallSlidingRight)
         {
             velocity.y = WallJumpHorSpeed;
             velocity.x = -wallJumpVertSpeed;
+            numJumps = 1;
         }
         else if (wallSlidingLeft)
         {
             velocity.y = WallJumpHorSpeed;
             velocity.x = wallJumpVertSpeed;
+            numJumps = 1;
         }
         else velocity.y = JumpSpeed;
+    }
+
+    private void ComputeFixedHorizontalMovement()
+    {
+        bool changingSpeed = targetHorSpeed * velocity.x < 0;
+
+        // Compute the acceleration
+        float acceleration;
+        // Consider the stopping and turning cases
+        if (Sprinting) acceleration = sprintAcceleration;
+        else if (Mathf.Abs(targetHorSpeed) < 0.0625f)
+            acceleration = stoppingDeceleration;
+        else if (changingSpeed) // Which means they have opposite signs
+            acceleration = turningDeceleration;
+        else acceleration = moveAcceleration;
+
+        // And get the delta velocity from it
+        float deltaVelocity = acceleration * Time.fixedDeltaTime;
+        if (velocity.x < targetHorSpeed)
+            velocity.x = Mathf.Min(velocity.x + deltaVelocity, targetHorSpeed);
+        else if (velocity.x > targetHorSpeed)
+            velocity.x = Mathf.Max(velocity.x - deltaVelocity, targetHorSpeed);
     }
 
     private void RespondToGravityAndCollision()
@@ -325,15 +336,17 @@ public class Player : MonoBehaviour
         if (resolution.x != 0)
         {
             velocity.x = 0;
+
             // Stop dashing
-            dashStartTime = Time.fixedTime - dashDuration;
+            dashStartTime = float.NegativeInfinity;
             if (!grounded)
             {
                 if (resolution.x < 0) wallSlidingRight = true;
                 else wallSlidingLeft = true;
             }
         }
-        else { wallSlidingRight = false; wallSlidingLeft = false; }
+        else wallSlidingRight = wallSlidingLeft = false;
+
         if (resolution.y > 0)
         {
             if (!grounded) Ground();
