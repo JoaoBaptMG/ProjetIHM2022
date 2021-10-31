@@ -18,8 +18,6 @@ public class Player : MonoBehaviour
     public float gravity = 2f;
     public float jumpHeight = 4f;
     public float jumpReleaseHeight = 2f;
-    [Tooltip("The maximum time in seconds after losing ground until the jump button can be pressed to jump.")]
-    public float postLedgeJumpDelay = 0.25f;
     [Tooltip("The maximum time in seconds before connecting with ground where a jump will be registered as valid.")]
     public float jumpBounceDelay = 0.25f;
     public int maxNumJumps = 2;
@@ -272,10 +270,7 @@ public class Player : MonoBehaviour
             lastTimeJumpPress = now;
         bool jumpPress = now - lastTimeJumpPress <= jumpBounceDelay;
 
-        // Check if the user just left ground
-        bool shortAfterFall = now - lastTimeLeftGround <= postLedgeJumpDelay;
-
-        if (grounded || shortAfterFall || numJumps < maxNumJumps || wallSlidingRight || wallSlidingLeft)
+        if (grounded || numJumps < maxNumJumps || wallSlidingRight || wallSlidingLeft)
         {
             if (jumpPress)
             {
