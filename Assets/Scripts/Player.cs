@@ -49,6 +49,7 @@ public class Player : MonoBehaviour
 
     // Private fields
     Vector2 velocity;
+    float targetHorSpeed;
     bool grounded;
     float lastTimeLeftGround;
     float lastTimeJumpPress;
@@ -63,10 +64,10 @@ public class Player : MonoBehaviour
     Rect boundsRect;
 
     // The particle system bound to the palyer
-    private ParticleSystem particleSystem;
+    private new ParticleSystem particleSystem;
 
     // The camera (used for screen shake)
-    private Camera camera;
+    private new Camera camera;
 
     // Transform property
     Vector2 Position
@@ -84,6 +85,7 @@ public class Player : MonoBehaviour
     void Start()
     {
         velocity = Vector2.zero;
+        targetHorSpeed = 0;
         grounded = false;
         dashed = false;
         wallSlidingRight = false;
@@ -97,7 +99,7 @@ public class Player : MonoBehaviour
         particleSystem.Stop();
 
         // Get the camera
-        camera = GameObject.FindObjectOfType<Camera>();
+        camera = FindObjectOfType<Camera>();
 
         // Set timer variables
         lastTimeLeftGround = float.NegativeInfinity;
@@ -113,6 +115,7 @@ public class Player : MonoBehaviour
     // Integrate using semi-implicit Euler
     void FixedUpdate()
     {
+        ComputeFixedHorizontalMovement();
         RespondToGravityAndCollision();
     }
 
@@ -120,7 +123,7 @@ public class Player : MonoBehaviour
     {
         // Get all the inputs necessary
         HandleSprinting();
-        HandleHorizontalMovement();
+        HandleHorizontalInput();
         HandleDash();
         HandleJump();
         RespondToTileType();
@@ -141,29 +144,11 @@ public class Player : MonoBehaviour
     // Get the actual horizontal movement, depending on the discrete movement
     private float HorizontalMovement => discreteMovement ? DiscreteHorizontalMovement : Input.GetAxisRaw("Horizontal");
 
-    void HandleHorizontalMovement()
+    void HandleHorizontalInput()
     {
         // First, set up the final speed
         float maxStateSpeed = Sprinting ? maxSprintSpeed : maxMoveSpeed;
-        float targetHorSpeed = maxStateSpeed * HorizontalMovement;
-        bool changingSpeed = targetHorSpeed * velocity.x < 0;
-
-        // Compute the acceleration
-        float acceleration;
-        // Consider the stopping and turning cases
-        if (Sprinting) acceleration = sprintAcceleration;
-        else if (Mathf.Abs(targetHorSpeed) < 0.0625f)
-            acceleration = stoppingDeceleration;
-        else if (changingSpeed) // Which means they have opposite signs
-            acceleration = turningDeceleration;
-        else acceleration = moveAcceleration;
-
-        // And get the delta velocity from it
-        float deltaVelocity = acceleration * Time.deltaTime;
-        if (velocity.x < targetHorSpeed)
-            velocity.x = Mathf.Min(velocity.x + deltaVelocity, targetHorSpeed);
-        else if (velocity.x > targetHorSpeed)
-            velocity.x = Mathf.Max(velocity.x - deltaVelocity, targetHorSpeed);
+        targetHorSpeed = maxStateSpeed * HorizontalMovement;
     }
 
     void HandleSprinting()
@@ -237,6 +222,7 @@ public class Player : MonoBehaviour
                 velocity.x = Mathf.Sign(velocity.x) * maxMoveSpeed;
                 EndDash();
             }
+
             dashStartTime = float.NegativeInfinity;
         }
     }
@@ -288,17 +274,42 @@ public class Player : MonoBehaviour
         // Set relevant variables
         grounded = false;
         numJumps++;
-        if(wallSlidingRight)
+
+        if (wallSlidingRight)
         {
             velocity.y = WallJumpHorSpeed;
             velocity.x = -wallJumpVertSpeed;
+            numJumps = 1;
         }
-        else if(wallSlidingLeft)
+        else if (wallSlidingLeft)
         {
             velocity.y = WallJumpHorSpeed;
             velocity.x = wallJumpVertSpeed;
+            numJumps = 1;
         }
         else velocity.y = JumpSpeed;
+    }
+
+    private void ComputeFixedHorizontalMovement()
+    {
+        bool changingSpeed = targetHorSpeed * velocity.x < 0;
+
+        // Compute the acceleration
+        float acceleration;
+        // Consider the stopping and turning cases
+        if (Sprinting) acceleration = sprintAcceleration;
+        else if (Mathf.Abs(targetHorSpeed) < 0.0625f)
+            acceleration = stoppingDeceleration;
+        else if (changingSpeed) // Which means they have opposite signs
+            acceleration = turningDeceleration;
+        else acceleration = moveAcceleration;
+
+        // And get the delta velocity from it
+        float deltaVelocity = acceleration * Time.fixedDeltaTime;
+        if (velocity.x < targetHorSpeed)
+            velocity.x = Mathf.Min(velocity.x + deltaVelocity, targetHorSpeed);
+        else if (velocity.x > targetHorSpeed)
+            velocity.x = Mathf.Max(velocity.x - deltaVelocity, targetHorSpeed);
     }
 
     private void RespondToGravityAndCollision()
@@ -307,7 +318,7 @@ public class Player : MonoBehaviour
         velocity.y -= gravity * Time.fixedDeltaTime;
 
         // Clamping vertical speed
-        if(wallSlidingRight || wallSlidingLeft) velocity.y = Mathf.Max(velocity.y, -maxWallSlideSpeed);
+        if (wallSlidingRight || wallSlidingLeft) velocity.y = Mathf.Max(velocity.y, -maxWallSlideSpeed);
 
         // Get movement resolution from the tilemap
         var deltaPosition = velocity * Time.fixedDeltaTime;
@@ -320,15 +331,17 @@ public class Player : MonoBehaviour
         if (resolution.x != 0)
         {
             velocity.x = 0;
+
             // Stop dashing
-            dashStartTime = Time.fixedTime - dashDuration;
-            if(!grounded)
+            dashStartTime = float.NegativeInfinity;
+            if (!grounded)
             {
                 if (resolution.x < 0) wallSlidingRight = true;
                 else wallSlidingLeft = true;
             }
         }
-        else { wallSlidingRight = false; wallSlidingLeft = false; }
+        else wallSlidingRight = wallSlidingLeft = false;
+
         if (resolution.y > 0)
         {
             if (!grounded) Ground();
@@ -371,7 +384,7 @@ public class Player : MonoBehaviour
     private void BeginWallSlide()
     {
         // Resume emitting smoke particles if the feedbacks are activated
-        if(Game.FeedbacksActivated && !particleSystem.isEmitting) particleSystem.Play();
+        if (Game.FeedbacksActivated && !particleSystem.isEmitting) particleSystem.Play();
     }
 
     private void EndWallSlide()
