@@ -65,10 +65,10 @@ public class Player : MonoBehaviour
     Rect boundsRect;
 
     // The particle system bound to the palyer
-    private ParticleSystem particleSystem;
+    private new ParticleSystem particleSystem;
 
     // The camera (used for screen shake)
-    private Camera camera;
+    private new Camera camera;
 
     // Transform property
     Vector2 Position
@@ -99,7 +99,7 @@ public class Player : MonoBehaviour
         particleSystem.Stop();
 
         // Get the camera
-        camera = GameObject.FindObjectOfType<Camera>();
+        camera = FindObjectOfType<Camera>();
 
         // Set timer variables
         lastTimeLeftGround = float.NegativeInfinity;
@@ -293,12 +293,12 @@ public class Player : MonoBehaviour
         // Set relevant variables
         grounded = false;
         numJumps++;
-        if(wallSlidingRight)
+        if (wallSlidingRight)
         {
             velocity.y = WallJumpHorSpeed;
             velocity.x = -wallJumpVertSpeed;
         }
-        else if(wallSlidingLeft)
+        else if (wallSlidingLeft)
         {
             velocity.y = WallJumpHorSpeed;
             velocity.x = wallJumpVertSpeed;
@@ -312,7 +312,7 @@ public class Player : MonoBehaviour
         velocity.y -= gravity * Time.fixedDeltaTime;
 
         // Clamping vertical speed
-        if(wallSlidingRight || wallSlidingLeft) velocity.y = Mathf.Max(velocity.y, -maxWallSlideSpeed);
+        if (wallSlidingRight || wallSlidingLeft) velocity.y = Mathf.Max(velocity.y, -maxWallSlideSpeed);
 
         // Get movement resolution from the tilemap
         var deltaPosition = velocity * Time.fixedDeltaTime;
@@ -327,7 +327,7 @@ public class Player : MonoBehaviour
             velocity.x = 0;
             // Stop dashing
             dashStartTime = Time.fixedTime - dashDuration;
-            if(!grounded)
+            if (!grounded)
             {
                 if (resolution.x < 0) wallSlidingRight = true;
                 else wallSlidingLeft = true;
@@ -376,7 +376,7 @@ public class Player : MonoBehaviour
     private void BeginWallSlide()
     {
         // Resume emitting smoke particles if the feedbacks are activated
-        if(Game.FeedbacksActivated && !particleSystem.isEmitting) particleSystem.Play();
+        if (Game.FeedbacksActivated && !particleSystem.isEmitting) particleSystem.Play();
     }
 
     private void EndWallSlide()
